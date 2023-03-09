@@ -1,50 +1,51 @@
 const express = require("express");
 const admin = require("firebase-admin");
-const router = express.Router();
+const { db } = require("./firebase");
+const app = express();
+const port = 1231;
 
-const my_databaseURL = "https://<your-firebase-project-id>.firebaseio.com";
+app.use(express.json());
 
-// Initialize Firebase Admin SDK
-admin.initializeApp({
-  credential: admin.credential.applicationDefault(),
-  databaseURL: my_databaseURL,
+app.post("/add", async (req, res) => {
+  console.log(req.body);
+  const user = {
+    name: req.body.name,
+    age: req.body.age,
+  };
+  const docRef = db.collection("users").doc("profile-info");
+  const res2 = await docRef.set({
+    user
+  });
+  res.status(200).send(res2);
 });
 
-// Create a new user in Firebase Authentication
-router.post("/users", async (req, res) => {
-  try {
-    const { email, password } = req.body;
+const halo_characters = {
+  "Master Chief": "John-117",
+  Arbiter: "Thel Vadam",
+  Cortana: "Artificial Intelligence",
+};
 
-    const userRecord = await admin.auth().createUser({
-      email,
-      password,
-    });
-
-    res.status(201).json({
-      message: "User created successfully",
-      data: userRecord.toJSON(),
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+app.get("/", async (req, res) => {
+  res.send("Server is Up and Running!");
 });
 
-// Get a user from Firebase Authentication
-router.get("/users/:userId", async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    const userRecord = await admin.auth().getUser(userId);
-
-    res.status(200).json({
-      message: "User retrieved successfully",
-      data: userRecord.toJSON(),
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+app.get("/halo", async (req, res) => {
+  res.send(halo_characters);
 });
 
-module.exports = router;
+app.get("/halo/:character", async (req, res) => {
+  const character = req.params.character;
+  const characterInfo = halo_characters[character];
+  res.send(characterInfo);
+});
+
+app.post("/halo", async (req, res) => {
+  const character = req.body.character;
+  const characterInfo = req.body.characterInfo;
+  halo_characters[character] = characterInfo;
+  res.send(halo_characters);
+});
+
+app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`);
+});
